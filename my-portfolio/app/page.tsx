@@ -1,23 +1,12 @@
-import Image from "next/image";
+
 
 export default function Home() {
   return (
-    <div className="relative flex flex-row px-3 h-25 items-center">
-      <Image 
-        src="/vercel.svg"
-        width={50}
-        height={50}
-        className="object-left hidden md:block"
-        alt="vercel logo"
-      />
-      <Image
-        src="/next.svg"
-        width={100}
-        height={100}
-        className="Object-left hidden md:block invert ml-5"
-        alt="next logo"
-      />
-      <h1 className="absolute left-0 right-0 text-center text-4xl font-bold">Joshua Shoemaker</h1>
-    </div>
+    <main className="flex flex-col justify-center max-w-2xl flex-1 p-10  mx-auto">
+      <p className="text-xl text-center">
+        This portfolio is coming soon. It will showcase artifacts and narratives from my Computer Science studies at Southern New Hampshire University. Built with Next.js and hosted on GitHub Pages. Check back soon for updates, or visit my GitHub at {" "}
+        <a href="https://github.com/NebuFlux" target="_blank">github.com/NebuFlux</a>.
+      </p>
+    </main>
   );
 }
