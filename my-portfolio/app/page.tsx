@@ -1,4 +1,4 @@
-
+import { YouTubeEmbed } from '@next/third-parties/google'
 
 export default function Home() {
   return (
@@ -7,6 +7,9 @@ export default function Home() {
         This portfolio is coming soon. It will showcase artifacts and narratives from my Computer Science studies at Southern New Hampshire University. Built with Next.js and hosted on GitHub Pages. Check back soon for updates, or visit my GitHub at {" "}
         <a href="https://github.com/NebuFlux" target="_blank">github.com/NebuFlux</a>.
       </p>
+      <div className="rounded-xl overflow-hidden my-5">
+        <YouTubeEmbed videoid="-Z_eqNcygFk"/>
+      </div>
     </main>
   );
 }

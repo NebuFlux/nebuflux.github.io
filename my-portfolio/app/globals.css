@@ -16,7 +16,7 @@
   --color-secondary: var(--color-secondary);
   --color-on-surface: var(--color-on-surface);
   --color-error: var(--color-error);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
 }
 
@@ -34,5 +34,5 @@
 body {
   background: var(--color-background);
   color: var(--color-on-surface);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter);
 }
