@@ -1,21 +1,32 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Fira_Code, Inter } from "next/font/google";
 import { Header } from "@/components/Header";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const firaCode = Fira_Code({
+  variable: "--font-fira-code",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://nebuflux.github.io"),
   title: "Joshua Shoemaker",
-  description: "Software developer portfolio for work complete during Computer Science studies at Southern New Hampshire University",
+  description: "Joshua Shoemaker | Computer Science ePortfolio — showcasing software development projects and academic artifacts from a BS in Computer Science at Southern New Hampshire University. Built with Next.js.",
+  keywords: ["Joshua Shoemaker", "Computer Science", "software developer", "ePortfolio", "SNHU", "Southern New Hampshire University", "Next.js", "web development", "AI", "state machine", "backend"],
+  authors: [{ name: "Joshua Shoemaker", url: "https://github.com/NebuFlux" }],
+  robots: { index: true, follow: true },
+  openGraph: {
+    title: "Joshua Shoemaker | CS ePortfolio",
+    description: "Software development projects and academic artifacts from a BS in Computer Science at SNHU.",
+    url: "https://nebuflux.github.io",
+    siteName: "Joshua Shoemaker Portfolio",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -26,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
+        className={`${firaCode.variable} ${inter.variable} antialiased flex flex-col min-h-screen`}
       >
         <Header />
         {children}
