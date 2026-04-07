@@ -13,19 +13,18 @@ export const Header = () => {
 
     return (
         <div className="relative flex flex-row px-3 h-15 items-end">
-            <Image 
-            src="https://github.com/NebuFlux.png"
-            width={50}
-            height={50}
-            className="object-left rounded-full object-cover border-2 border-secondary"
-            alt="GitHub Profile Pic"
-            />
+            <Link className={`text-xl transition-transform hover:-translate-y-1 
+                ${pathname ==="/" ? "text-primary border-b-2 border-primary" : ""}`} href="/">
+                <Image 
+                src="https://github.com/NebuFlux.png"
+                width={50}
+                height={50}
+                className="object-left rounded-full object-cover border-2 border-secondary"
+                alt="GitHub Profile Pic"
+                />
+            </Link>
             <h1 className="text-left text-xl md:text-2xl font-bold ml-5 text-primary">Joshua Shoemaker</h1>
             <div className="hidden md:flex flex-row items-end ml-auto gap-10 text-secondary">
-                <Link className={`text-xl transition-transform hover:-translate-y-1 
-                ${pathname ==="/" ? "text-primary border-b-2 border-primary" : ""}`} href="/">
-                    Home
-                </Link>
                 <Link className={`text-xl transition-transform hover:-translate-y-1 
                 ${pathname ==="/artifact_1" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_1">
                     Artifact 1
@@ -44,11 +43,6 @@ export const Header = () => {
             </button>
             {isOpen &&
             <div className="absolute top-full right-0 bg-surface flex flex-col gap-4">
-                <Link onClick={() => setIsOpen(false)} 
-                className={`text-xl transition-transform hover:-translate-y-1 
-                ${pathname ==="/" ? "text-primary border-b-2 border-primary" : ""} mr-15`} href="/">
-                    Home
-                </Link>
                 <Link onClick={() => setIsOpen(false)}
                 className={`text-xl transition-transform hover:-translate-y-1 
                 ${pathname ==="/artifact_1" ? "text-primary border-b-2 border-primary" : ""} mr-15`} href="/artifact_1">
