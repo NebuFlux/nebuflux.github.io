@@ -57,7 +57,7 @@ import requests
 #
 DEBUG = True
 
-# Section: Alert_System
+# Section: Alert System
 # class to send alerts to cloud backend server
 class Alert_System:
     """Manages asynchronous alert delivery to the cloud backend REST API.
@@ -577,7 +577,7 @@ class TrafficAnalyzer:
 # End Section
 
 
-# Section: Network Monitor Model
+# Section: Network Monitor Domain Model
 # NetworkMonitoringModel to track instance variables
 class NetworkMonitorModel:
     """Aggregates the four subsystems (capture, analysis, inference, alerts)
