@@ -20,7 +20,7 @@ export default async function Artifact_1() {
   const monitorThread = smCode['Network Domain Model']?.['Monitor Loop']?.['content'];
 
   return (
-    <main className="flex flex-col p-5  mx-auto w-full">
+    <main className="flex flex-col p-5  mx-auto w-full max-w-[1600px]">
 
       <h1 className="text-center">
         Inspector Gadget State Machine
