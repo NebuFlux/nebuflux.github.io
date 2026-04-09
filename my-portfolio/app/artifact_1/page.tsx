@@ -44,7 +44,7 @@ export default async function Artifact_1() {
             Asynchronous Receiver/Transmitter (UART), and the Serial Peripheral 
             Interface (SPI). If you would like to view both the original and enhanced 
             State Machines you can see them in this GitHub repo <a target="_blank" 
-            href="www.github.com/Nebuflux">here</a>
+            href="https://github.com/NebuFlux/nebuflux.github.io/tree/main/StateMachine">here</a>
           </p>
         </div>
         <div className="flex flex-col lg:flex-1 min-w-0 gap-2">
@@ -85,7 +85,8 @@ export default async function Artifact_1() {
           The four components described earlier (packet retriever, feature extractor, 
           inference model, and alarm engine) are each their own class. They are all 
           wired together in <a target="_blank"
-          href="www.github.com/Nebuflux/ANN_modeling">NetworkMonitorModel.__init__
+          href="https://github.com/NebuFlux/nebuflux.github.io/blob/4b2ad1eb75bce9f68a040b64b10edc5ef5886a78/StateMachine/Network_Monitor_SM.py#L567-L652"
+          >NetworkMonitorModel.__init__
             <span className="translate-y-0.5">
               <SiGithub className="fill-blue-400 -ml-2 mb-2" size={10}/>
             </span>
