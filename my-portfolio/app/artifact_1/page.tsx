@@ -13,6 +13,11 @@ export default async function Artifact_1() {
   const packetCallBack = smCode['Packet Capture']?.['Packet Callback']?.['content'];
   const NaNCatch = smCode['Traffic Analyzer']?.['NaN Catch']?.['content'];
   const inferenceThread = smCode['Inference Model']?.['Inference Thread']?.["content"];
+  const piEnv = smCode['Alert System']?.['Init']?.["content"];
+  const heartBeat = smCode['Alert System']?.['Heartbeat']?.["content"];
+  const localLog = smCode['Alert System']?.['Post Alerts']?.["content"];
+  const enterIdle = smCode['State Machine']?.['Enter Idle']?.['content'];
+  const monitorThread = smCode['Network Domain Model']?.['Monitor Loop']?.['content'];
 
   return (
     <main className="flex flex-col p-5  mx-auto w-full">
@@ -21,7 +26,7 @@ export default async function Artifact_1() {
         Inspector Gadget State Machine
       </h1>
 
-      <div className="flex flex-col lg:flex-row-reverse my-2 mx-0.5 lg:my-4
+      <div className="flex flex-col lg:flex-row my-2 mx-0.5 lg:my-4
       justify-center gap-2 lg:gap-4 w-full">
         <div className="flex flex-col lg:flex-1">
           <h3 className="mt-5 text-center">Where This Started</h3>
@@ -37,7 +42,9 @@ export default async function Artifact_1() {
             I also explored the intricacies of peripheral integration through serial 
             communication protocols, such as the Inter-Integrated Circuit (I2C), Universal 
             Asynchronous Receiver/Transmitter (UART), and the Serial Peripheral 
-            Interface (SPI).
+            Interface (SPI). If you would like to view both the original and enhanced 
+            State Machines you can see them in this GitHub repo <a target="_blank" 
+            href="www.github.com/Nebuflux">here</a>
           </p>
         </div>
         <div className="flex flex-col lg:flex-1 min-w-0 gap-2">
@@ -77,12 +84,10 @@ export default async function Artifact_1() {
         <p className="indent-10 lg:flex-1">
           The four components described earlier (packet retriever, feature extractor, 
           inference model, and alarm engine) are each their own class. They are all 
-          wired together in 
-          <a className="inline-flex items-baseline text-teal-400 hover:underline 
-          indent-0" 
+          wired together in <a target="_blank"
           href="www.github.com/Nebuflux/ANN_modeling">NetworkMonitorModel.__init__
             <span className="translate-y-0.5">
-              <SiGithub className="fill-teal-400 ml-2 mb-2" size={10}/>
+              <SiGithub className="fill-blue-400 -ml-2 mb-2" size={10}/>
             </span>
           </a>. 
           This is the "<em>domain model</em>" the Python State Machine library expects, and a 
@@ -140,6 +145,7 @@ export default async function Artifact_1() {
           </p>
         </div>
       </div>
+
       <h3 className="mt-10 text-center">Guarding against hostile inputs</h3>
       <div className="flex flex-col lg:flex-row-reverse my-2 mx-0.5 lg:my-4
       justify-center gap-2 lg:gap-4 w-full">
@@ -178,6 +184,7 @@ export default async function Artifact_1() {
           />
         </div>
       </div>
+
       <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center 
       gap-2 lg:gap-4 w-full">
         <p className="indent-10 lg:flex-1">
@@ -190,6 +197,7 @@ export default async function Artifact_1() {
             dangerouslySetInnerHTML={{__html: NaNCatch}}
           />
       </div>
+
       <div className="flex flex-col my-2 lg:flex-row-reverse lg:my-4 mx-0.5 
       justify-center gap-2 lg:gap-4 w-full">
         <p className="indent-10 lg:flex-1">
@@ -207,11 +215,109 @@ export default async function Artifact_1() {
              threads spend most of their time blocked on queue operations and 
              network I/O, respectively, contention is minimal.
         </p>
-        <div key={''} className="max-w-full lg:flex-1 min-w-0
+        <div key={'Inference Thread'} className="max-w-full lg:flex-1 min-w-0
           rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
             dangerouslySetInnerHTML={{__html: inferenceThread}}
           />
       </div>
+
+      <h3 className="text-center mt-10">A Secure Path to the Backend</h3>
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 items-center 
+      gap-2 lg:gap-4 w-full">
+        <p className="indent-10 flex-1">
+          For the secure API post method, I stored a shared key as an 
+          environment variable for separation and will ensure the connection 
+          is over HTTPS to protect the key in transit.
+        </p>
+        <div key={'Pi Environment'} className="max-w-full min-w-0 flex-1
+        rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+          dangerouslySetInnerHTML={{__html: piEnv}}
+        />
+      </div>
+
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center 
+      gap-2 lg:gap-4 w-full">
+          <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+            <p className="indent-10">
+              Before sending a batch of alerts, the alert thread first checks 
+              the server is reachable with a heartbeat GET.
+            </p>
+            <div key={'Heartbeat'} className="max-w-full min-w-0
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: heartBeat}}
+            />
+          </div>
+          <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+            <p className="indent-10">
+              If the heartbeat fails, the batch is never sent. However, it's also 
+              never lost, because the failure is logged to a local file. I 
+              implemented the same function if the POST itself fails:
+            </p>
+            <div key={'POST'} className="max-w-full min-w-0
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: localLog}}
+            />
+          </div>
+      </div>
+
+      <h3 className="text-center mt-10">Just Hanging Around</h3>
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center 
+      gap-2 lg:gap-4 w-full">
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            One detail I would like to give more attention to is the idle state 
+            behavior. A traditional state machine would either spin in idle 
+            (wasting CPU) or sleep for a fixed interval (wasting latency on a 
+            quiet network). This implementation does neither. Instead, it performs 
+            a single-packet blocking sniff. The first packet that arrives instantly 
+            wakes the machine back into monitor mode and is put into the packet 
+            queue so it isn't lost:
+          </p>
+          <div key={'Enter Idle'} className="max-w-full min-w-0
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: enterIdle}}
+            />
+        </div>
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            The monitor state itself transitions back to idle after two consecutive 
+            empty-queue seconds. The machine smarlty transitions between idle and 
+            monitor automatically based on network activity. It's a small piece of 
+            control-flow design that I wanted to automate for efficiency.
+          </p>
+          <div key={'Monitor Thread'} className="max-w-full min-w-0
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: monitorThread}}
+            />
+        </div>
+      </div>
+
+      <h3 className="text-center mt-10">Conclusions</h3>
+      <p className="indent-10">
+        This enhancement shows my ability to design and evaluate a computing solution 
+        while managing the trade-offs involved in design choices. Every deliberate 
+        decision I made about queue sizing, flow-table management, and thread 
+        coordination was a trade-off between throughput, memory, and resilience on 
+        constrained hardware. I applied algorithmic principles and 
+        industry-standard practices to a real problem. Throughout the project I 
+        maintained a security mindset that anticipates adversarial exploits. 
+        The HTTPS-plus-bearer-token path between the Pi and the server, a bounded 
+        flow table that closes a denial-of-service hole in my own monitor, and the 
+        NaN and malformed-packet guards are all the product of thinking like an 
+        attacker.
+      </p>
+      <p className="indent-10">
+        The biggest lesson for me was that "design" isn't something you do once at 
+        the start and walk away from. Every line in this file is a small design 
+        decision. The choice of queue size, the choice of when to drop a packet, 
+        the choice of which thread holds the GIL, the choice of what to do when 
+        the server is unreachable. All very valuable lessons when developing with 
+        embedded systems. Something I'm actually quite fond of.
+      </p>
+
+      <h3 className="mt-10">References</h3>
+      <p>Beazley, D. (2010). Understanding the Python GIL. dabeaz.com. <a target="_blank" href="https://dabeaz.com/python/UnderstandingGIL.pdf">https://dabeaz.com/python/UnderstandingGIL.pdf</a></p>
+      <p>Gargan, R. (2025, January 16). What is MTU size? Effects on speed and network efficiency. Netmaker. <a target="_blank" href="https://www.netmaker.io/resources/mtu-size">https://www.netmaker.io/resources/mtu-size</a></p>
     </main>
   );
 }

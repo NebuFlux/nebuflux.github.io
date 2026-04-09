@@ -55,4 +55,7 @@ body {
     @apply text-base leading-relaxed mb-2;
     color: var(--color-on-surface); /* Uses your defined variable */
   }
+  a {
+    @apply inline-flex whitespace-pre-wrap indent-0 text-blue-400 font-medium underline decoration-inherit transition-transform hover:-translate-y-1;
+  }
 }

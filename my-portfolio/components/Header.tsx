@@ -20,27 +20,27 @@ export const Header = () => {
                 width={50}
                 height={50}
                 className={`object-left rounded-full object-cover  
-                    ${pathname ==="/" ? "border-b-2 border-primary" : "border-2 border-secondary"}`}
+                    ${pathname ==="/" ? "border-4 border-primary" : "border-4 border-secondary"}`}
                 alt="GitHub Profile Pic"
                 />
             </Link>
             <h3 className="text-base md:text-xl lg:text-2xl mb-0.5 mx-2 md:mx-5 text-primary">Joshua Shoemaker</h3>
-            <Link className="transition-transform hover:-translate-y-1" href="https://github.com/nebuflux">
+            <a className="transition-transform hover:-translate-y-1" target="_blank" href="https://github.com/nebuflux">
                 <SiGithub 
                 className="fill-primary ml-2 mb-2"
                 size={25}
                 />
-            </Link>
+            </a>
             <div className="hidden md:flex flex-row items-end ml-auto gap-10 text-secondary">
-                <Link className={`text-xl transition-transform hover:-translate-y-1 
+                <Link className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_1" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_1">
                     Artifact 1
                 </Link>
-                <Link className={`text-xl transition-transform hover:-translate-y-1 
+                <Link className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_2" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_2">
                     Artifact 2
                 </Link>
-                <Link className={`text-xl transition-transform hover:-translate-y-1 
+                <Link className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_3" ? "text-primary border-b-2 border-primary" : ""} mr-10`} href="/artifact_3">
                     Artifact 3
                 </Link>
