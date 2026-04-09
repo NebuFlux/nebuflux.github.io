@@ -24,7 +24,7 @@ export const Header = () => {
                 alt="GitHub Profile Pic"
                 />
             </Link>
-            <h1 className="text-left text-l md:text-xl lg:text-2xl font-bold ml-2 md:ml-5 text-primary">Joshua Shoemaker</h1>
+            <h3 className="text-base md:text-xl lg:text-2xl mb-0.5 mx-2 md:mx-5 text-primary">Joshua Shoemaker</h3>
             <Link className="transition-transform hover:-translate-y-1" href="https://github.com/nebuflux">
                 <SiGithub 
                 className="fill-primary ml-2 mb-2"

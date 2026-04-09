@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+
 :root {
   --color-background: #212342;
   --color-surface: #312F2F;
@@ -35,4 +36,23 @@ body {
   background: var(--color-background);
   color: var(--color-on-surface);
   font-family: var(--font-inter);
+}
+
+@layer base {
+  h1 {
+    @apply text-4xl text-secondary font-bold mb-4;
+  }
+  h2 {
+    @apply text-3xl text-secondary font-semibold mb-3;
+  }
+  h3 {
+    @apply text-2xl text-secondary font-medium mb-2;
+  }
+  h4 {
+    @apply text-xl text-secondary font-medium mb-2;
+  }
+  p {
+    @apply text-base leading-relaxed mb-2;
+    color: var(--color-on-surface); /* Uses your defined variable */
+  }
 }
