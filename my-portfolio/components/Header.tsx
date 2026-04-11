@@ -51,17 +51,17 @@ export const Header = () => {
             {isOpen &&
             <div className="absolute top-full right-15 p-2 rounded-2xl bg-surface flex flex-col gap-4">
                 <Link onClick={() => setIsOpen(false)}
-                className={`text-xl transition-transform hover:-translate-y-1 
+                className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_1" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_1">
                     Artifact 1
                 </Link>
                 <Link onClick={() => setIsOpen(false)}
-                className={`text-xl transition-transform hover:-translate-y-1 
+                className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_2" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_2">
                     Artifact 2
                 </Link>
                 <Link onClick={() => setIsOpen(false)}
-                className={`text-xl transition-transform hover:-translate-y-1 
+                className={`text-xl transition-transform hover:-translate-y-1 no-underline
                 ${pathname ==="/artifact_3" ? "text-primary border-b-2 border-primary" : ""}`} href="/artifact_3">
                     Artifact 3
                 </Link>

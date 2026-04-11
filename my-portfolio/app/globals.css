@@ -36,6 +36,7 @@ body {
   background: var(--color-background);
   color: var(--color-on-surface);
   font-family: var(--font-inter);
+  overflow-x: hidden;
 }
 
 @layer base {
@@ -57,5 +58,7 @@ body {
   }
   a {
     @apply inline-flex whitespace-pre-wrap indent-0 text-blue-400 font-medium underline decoration-inherit transition-transform hover:-translate-y-1;
+    overflow-wrap: anywhere;
   }
 }
+
