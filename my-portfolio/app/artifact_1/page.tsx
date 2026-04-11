@@ -11,6 +11,7 @@ export default async function Artifact_1() {
   const pcBoundedQueue = smCode['Packet Capture']?.['Init']?.['content'];
   const taBoundedQueue = smCode['Traffic Analyzer']?.['Init']?.['content'];
   const packetCallBack = smCode['Packet Capture']?.['Packet Callback']?.['content'];
+  const flowTableEviction = smCode['Traffic Analyzer']?.['Flow Table Eviction']?.['content'];
   const NaNCatch = smCode['Traffic Analyzer']?.['NaN Catch']?.['content'];
   const inferenceThread = smCode['Inference Model']?.['Inference Thread']?.["content"];
   const piEnv = smCode['Alert System']?.['Init']?.["content"];
@@ -18,9 +19,13 @@ export default async function Artifact_1() {
   const localLog = smCode['Alert System']?.['Post Alerts']?.["content"];
   const enterIdle = smCode['State Machine']?.['Enter Idle']?.['content'];
   const monitorThread = smCode['Network Domain Model']?.['Monitor Loop']?.['content'];
+  const smRun = smCode['State Machine']?.['Run']?.['content'];
+  const midStreamAssignment = smCode['Traffic Analyzer']?.['Mid-stream Assignment']?.['content'];
+  const finThreshold = smCode['Traffic Analyzer']?.['FIN Threshold']?.['content'];
+  const staleFlowSweep = smCode['Traffic Analyzer']?.['Stale Flow Sweep']?.['content'];
 
   return (
-    <main className="flex flex-col p-5  mx-auto w-full max-w-[1600px]">
+    <main className="flex flex-col  p-5 w-full mx-auto lg:max-w-[1600px]">
 
       <h1 className="text-center">
         Inspector Gadget State Machine
@@ -173,30 +178,29 @@ export default async function Artifact_1() {
           rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
             dangerouslySetInnerHTML={{__html: packetCallBack}}
           />
-          <p className="indent-10">
-            The second line of defense sits at the boundary between feature 
-            extraction and the model. np.std([]) returns NaN, and a single NaN in 
-            the input tensor will corrupt every neuron downstream. This loop 
-            catches them all before the tensor ever reaches the interpreter:
-          </p>
-          <div key={'NaN Catch'} className="max-w-full
-          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
-            dangerouslySetInnerHTML={{__html: NaNCatch}}
-          />
         </div>
       </div>
 
-      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center 
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center
       gap-2 lg:gap-4 w-full">
         <p className="indent-10 lg:flex-1">
-          To guard against flow table exhaustion, the flow statistics dictionary is 
-          capped and evicts the 100 oldest entries when the limit is reached, preventing 
+          To guard against flow table exhaustion, the flow statistics dictionary is
+          capped and evicts the 100 oldest entries when the limit is reached, preventing
           an adversary from filling the table and operating freely in untracked flows.
+          The NaN guard runs at the same boundary. <code>np.std([])</code> on an empty
+          packet list produces NaN, and a single NaN in the input tensor corrupts every
+          neuron downstream. Both are addressed before any data reaches the interpreter:
         </p>
-        <div key={'NaN Catch'} className="max-w-full lg:flex-1 min-w-0
-          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
-            dangerouslySetInnerHTML={{__html: NaNCatch}}
-          />
+        <div className="flex flex-col lg:flex-1 min-w-0 gap-2">
+          <div key={'Flow Table Eviction'} className="max-w-full
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: flowTableEviction}}
+            />
+          <div key={'NaN Catch'} className="max-w-full
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: NaNCatch}}
+            />
+        </div>
       </div>
 
       <div className="flex flex-col my-2 lg:flex-row-reverse lg:my-4 mx-0.5 
@@ -223,42 +227,38 @@ export default async function Artifact_1() {
       </div>
 
       <h3 className="text-center mt-10">A Secure Path to the Backend</h3>
-      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 items-center 
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 
       gap-2 lg:gap-4 w-full">
-        <p className="indent-10 flex-1">
-          For the secure API post method, I stored a shared key as an 
-          environment variable for separation and will ensure the connection 
-          is over HTTPS to protect the key in transit.
-        </p>
-        <div key={'Pi Environment'} className="max-w-full min-w-0 flex-1
-        rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
-          dangerouslySetInnerHTML={{__html: piEnv}}
-        />
-      </div>
-
-      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center 
-      gap-2 lg:gap-4 w-full">
-          <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
-            <p className="indent-10">
-              Before sending a batch of alerts, the alert thread first checks 
-              the server is reachable with a heartbeat GET.
-            </p>
-            <div key={'Heartbeat'} className="max-w-full min-w-0
-            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
-              dangerouslySetInnerHTML={{__html: heartBeat}}
-            />
-          </div>
-          <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
-            <p className="indent-10">
-              If the heartbeat fails, the batch is never sent. However, it's also 
-              never lost, because the failure is logged to a local file. I 
-              implemented the same function if the POST itself fails:
-            </p>
-            <div key={'POST'} className="max-w-full min-w-0
-            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
-              dangerouslySetInnerHTML={{__html: localLog}}
-            />
-          </div>
+        <div className="flex flex-col lg:flex-1 min-w-0 gap-2">
+          <p className="indent-10">
+            For the secure API post method, I stored a shared key as an 
+            environment variable for separation and will ensure the connection 
+            is over HTTPS to protect the key in transit.
+          </p>
+          <div key={'Pi Environment'} className="max-w-full min-w-0 
+          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+            dangerouslySetInnerHTML={{__html: piEnv}}
+          />
+          <p className="indent-10 mt-5">
+            Before sending a batch of alerts, the alert thread first checks 
+            the server is reachable with a heartbeat GET.
+          </p>
+          <div key={'Heartbeat'} className="max-w-full min-w-0
+          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+            dangerouslySetInnerHTML={{__html: heartBeat}}
+          />
+        </div>
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            If the heartbeat fails, the batch is never sent. However, it's also 
+            never lost, because the failure is logged to a local file. I 
+            implemented the same function if the POST itself fails:
+          </p>
+          <div key={'POST'} className="max-w-full min-w-0
+          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+            dangerouslySetInnerHTML={{__html: localLog}}
+          />
+        </div>
       </div>
 
       <h3 className="text-center mt-10">Just Hanging Around</h3>
@@ -294,27 +294,137 @@ export default async function Artifact_1() {
       </div>
 
       <h3 className="text-center mt-10">Conclusions</h3>
+      <div className="flex flex-col my-2 lg:flex-row lg:my-4 mx-0.5 justify-center
+      gap-2 lg:gap-4 w-full">
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            This enhancement shows my ability to design and evaluate a computing solution
+            while managing the trade-offs involved in design choices. Every deliberate
+            decision I made about queue sizing, flow-table management, and thread
+            coordination was a trade-off between throughput, memory, and resilience on
+            constrained hardware. I applied algorithmic principles and
+            industry-standard practices to a real problem. Throughout the project I
+            maintained a security mindset that anticipates adversarial exploits.
+            The HTTPS-plus-bearer-token path between the Pi and the server, a bounded
+            flow table that closes a denial-of-service hole in my own monitor, and the
+            NaN and malformed-packet guards are all the product of thinking like an
+            attacker.
+          </p>
+          <p className="indent-10">
+            Deployment also surfaced a subtle but critical bug in the state machine class
+            signature. The python-statemachine documentation shows a generic type parameter:{' '}
+            <code>NetworkMonitorMachine(StateMachine[ 'NetworkMonitorModel'])</code>{' '}
+            which looks reasonable on paper. At runtime, however, python-statemachine 3.x does not
+            implement a true generic. The subscript is type-hint only. Python raised a
+            <code>TypeError</code> the moment the class body was evaluated, before a single
+            packet was ever seen. The fix was simply removing the subscript and writing{' '}
+            <code>class NetworkMonitorMachine(StateMachine):</code>. It was a good reminder
+            that type annotations and runtime behavior are not the same thing, and that
+            reading library documentation is not a substitute for running the code.
+          </p>
+        </div>
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10 lg:flex-1">
+            The most significant structural lesson came from a threading mistake I made
+            in the monitor loop. Initially I forgot to follow the controller-worker design
+            pattern. I placed state-change logic inside <code>monitor_thread</code>, which
+            called <code>machine.send('wait')</code> directly. Because <code>send()</code>
+            is synchronous and immediately re-enters the state machine, it spawned a new
+            <code>monitor_thread</code> before the old one returned, creating an infinite
+            threading loop that crashed with <code>TransitionNotAllowed</code>. I
+            remembered to keep controlling logic separate from working logic. I then created
+            a <code>run()</code> method on the state machine itself so it can drive all
+            state transitions. I made <code>NetworkMonitorModel</code> a supervisor that
+            only delegates and coordinates work to the other classes. It signals readiness
+            via a <code>threading.Event</code> and returns. The state machine's
+            <code>run()</code> loop waits on that signal, then decides what to do next:
+          </p>
+          <div key={'SM Run'} className="max-w-full lg:flex-1 min-w-0
+            rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+              dangerouslySetInnerHTML={{__html: smRun}}
+            />
+        </div>
+      </div>
       <p className="indent-10">
-        This enhancement shows my ability to design and evaluate a computing solution 
-        while managing the trade-offs involved in design choices. Every deliberate 
-        decision I made about queue sizing, flow-table management, and thread 
-        coordination was a trade-off between throughput, memory, and resilience on 
-        constrained hardware. I applied algorithmic principles and 
-        industry-standard practices to a real problem. Throughout the project I 
-        maintained a security mindset that anticipates adversarial exploits. 
-        The HTTPS-plus-bearer-token path between the Pi and the server, a bounded 
-        flow table that closes a denial-of-service hole in my own monitor, and the 
-        NaN and malformed-packet guards are all the product of thinking like an 
-        attacker.
-      </p>
-      <p className="indent-10">
-        The biggest lesson for me was that "design" isn't something you do once at 
-        the start and walk away from. Every line in this file is a small design 
-        decision. The choice of queue size, the choice of when to drop a packet, 
-        the choice of which thread holds the GIL, the choice of what to do when 
-        the server is unreachable. All very valuable lessons when developing with 
+        The biggest lesson for me was that "design" isn't something you do once at
+        the start and walk away from. Every line in this file is a small design
+        decision. The choice of queue size, the choice of when to drop a packet,
+        the choice of which thread holds the GIL, the choice of what to do when
+        the server is unreachable. All very valuable lessons when developing with
         embedded systems. Something I'm actually quite fond of.
       </p>
+
+      <h3 className="text-center mt-10">Trial by Fire Updates</h3>
+      <div className="flex flex-col lg:flex-row my-2 mx-0.5 lg:my-4
+      justify-center gap-2 lg:gap-4 w-full">
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            After letting the monitor run against a tcpreplay loop for 24 hours, it had
+            analyzed over 12,000 flows and posted zero alerts. That result needed explaining.
+          </p>
+          <p className="indent-10 lg:flex-1">
+            The first problem was in flow tracking. The flow tracker discarded any flow that
+            lacked a captured SYN handshake. With tcpreplay replaying a historical pcap,
+            that's most flows. The fix assigns direction metadata to those flows instead
+            of deleting them. The model doesn't need to know which side initiated the
+            connection. It needs consistent feature values.
+          </p>
+        </div>
+        <div key={'Mid-stream Assignment'} className="max-w-full lg:flex-1 min-w-0
+          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+          dangerouslySetInnerHTML={{__html: midStreamAssignment}}
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row-reverse my-2 mx-0.5 lg:my-4
+      justify-center gap-2 lg:gap-4 w-full">
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            The second problem was quieter. When the queue is empty, the alert thread still
+            posts an empty array to <code>/api/alerts</code>. <code>insertMany([])</code>
+            returns 201 with no documents written. Railway showed clean 201s the entire time.
+            The database was empty. This confirmed the real problem was upstream: flows
+            weren't reaching inference.
+          </p>
+          <p className="indent-10 lg:flex-1">
+            A third issue was connected to the first. The FIN threshold was{' '}
+            <code>&gt;= 1</code>, extracting a flow the moment one side sent a FIN.
+            Flows that never fully closed were going to inference with incomplete data.
+            Raising the threshold to <code>&gt; 1</code> waits for both FINs. Flows
+            that never close cleanly are handled by the stale sweep instead.
+          </p>
+        </div>
+        <div key={'FIN Threshold'} className="min-w-0 w-fit max-w-full lg:flex-1 
+          rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+          dangerouslySetInnerHTML={{__html: finThreshold}}
+        />
+      </div>
+
+      <div className="flex flex-col lg:flex-row my-2 mx-0.5 lg:my-4
+      justify-center gap-2 lg:gap-4 w-full">
+        <div className="flex flex-col lg:flex-1 min-w-0 mx-0.5  gap-2">
+          <p className="indent-10">
+            Not every flow accumulates 25 packets or reaches a clean FIN exchange. For
+            those, I added an hourly cleanup pass to the{' '}
+            <span className="text-blue-300 font-medium">Traffic Analyzer</span>. Flows
+            inactive for more than an hour get their features extracted and queued for
+            inference. They're then removed from the flow table. The sweep uses{' '}
+            <code>packet.time</code> from the pcap, not the system clock. Replayed
+            timestamps work correctly as a result.
+          </p>
+          <p className="indent-10">
+            Every flow now has a path to inference: 25 or more packets, both FINs
+            observed, or the stale sweep after an hour of inactivity. The monitor was
+            architecturally sound. It just wasn't seeing most of its traffic.
+          </p>
+      </div>
+      <div key={'Stale Flow Sweep'} className="max-w-full flex-1
+        rounded-xl overflow-hidden [&>pre]:overflow-x-auto [&>pre]:p-2"
+        dangerouslySetInnerHTML={{__html: staleFlowSweep}}
+      />
+      </div>
+
+      
 
       <h3 className="mt-10">References</h3>
       <p>Beazley, D. (2010). Understanding the Python GIL. dabeaz.com. <a target="_blank" href="https://dabeaz.com/python/UnderstandingGIL.pdf">https://dabeaz.com/python/UnderstandingGIL.pdf</a></p>

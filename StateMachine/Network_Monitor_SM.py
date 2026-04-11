@@ -23,7 +23,7 @@ __version__ = "1.1.0"
 #
 # Import necessary to provide timing in the main loop
 #
-from time import sleep
+from time import sleep, time
 from datetime import datetime
 from datetime import timedelta
 
@@ -31,6 +31,7 @@ from datetime import timedelta
 # Imports required to allow us to build a fully functional state machine
 #
 from statemachine import StateMachine, State
+from statemachine.exceptions import TransitionNotAllowed
 
 # Networking imports
 from scapy.all import sniff, IP, TCP, AsyncSniffer
@@ -44,12 +45,15 @@ import sys
 # Data modeling & AI imports
 import numpy as np
 # Use the following line on Pi environment
-# import tflite_runtime.interpreter as tflite
-import tensorflow as tf
+import tflite_runtime.interpreter as tflite
+# use for desktop
+# import tensorflow as tf
+# import tensorflow as tf
 import joblib
 
 # Environment variables & server update imports
 import os
+from dotenv import load_dotenv
 import requests
 
 # DEBUG flag - boolean value to indicate whether to print
@@ -77,12 +81,13 @@ class Alert_System:
             KeyError: If the ``API_KEY`` or ``SERVER_URL`` environment
                 variables are not set.
         """
-        self.key = os.environ['API_KEY']
-        self.api_url = os.environ['SERVER_URL']
+        load_dotenv()
+        self.key = os.getenv('API_KEY')
+        self.api_url = os.getenv('SERVER_URL')
         # Event used to signal the alert thread to stop gracefully
         self.alert_event = threading.Event()
-        # Event set when the server heartbeat request times out
-        self.time_out = threading.Event()
+        self.alert_thread = None
+        self.sent_alerts = 0
 
     def send_alerts(self, alert_queue):
         """Starts the background thread that consumes alerts and POSTs them
@@ -110,13 +115,18 @@ class Alert_System:
                 # check for empty queue.
                 # keep cycling until queue is empty longer than an hour.
                 if alert_queue.empty() and datetime.now() < time_counter + timedelta(hours = 1):
+                    sleep(5)
+                    remaining = (time_counter + timedelta(hours=1)) - datetime.now()
+                    print(f"Time till heartbeat: {int(remaining.total_seconds() // 60):02d}:{int(remaining.total_seconds() % 60):02d}")
                     continue
+                else:
+                    time_counter = datetime.now()
+                
                 
                 # Heartbeat GET confirms the server is reachable before posting
                 try:
                     heartbeat = requests.get(url =f'{self.api_url}/heartbeat', headers = {'Authorization': f'Bearer {self.key}'}, timeout=5)
                 except requests.exceptions.Timeout:
-                    self.time_out.set()
                     self.log_errors(activities = [], occasion = {"heartbeat": "Timeout"}, time = datetime.now())
                     continue
 
@@ -142,6 +152,8 @@ class Alert_System:
                                             headers = {'Authorization': f'Bearer {self.key}'},
                                             timeout=5
                                             )
+                    self.sent_alerts += 1
+                    print(f'{self.sent_alerts}: Sent So Far!')
                 # Catch all requests exceptions
                 except requests.exceptions.RequestException as e:
                     # log in local storage file.
@@ -205,11 +217,13 @@ class Inference_Model:
         """
         # Event used to signal the inference thread to stop gracefully
         self.stop_inference = threading.Event()
+        self.inference_thread = None
+        self.analyzed_packets = 0
         # Queue through which classified threats flow to Alert_System
         self.alert_queue = queue.Queue()
-        self.interpreter = tf.lite.Interpreter(model_path=model)
+        # self.interpreter = tf.lite.Interpreter(model_path=model)
         # use this line when running on pi
-        # interpreter = tflite.Interpreter(model_path=model)
+        self.interpreter = tflite.Interpreter(model_path=model)
 
         # Load in scaler created during training.
         self.scaler = joblib.load('NMMscaler.joblib')
@@ -229,6 +243,8 @@ class Inference_Model:
                 which must contain at minimum the keys ``src``, ``sport``,
                 ``dst``, and ``Destination Port``.
         """
+        self.analyzed_packets += 1
+        print(f'Analyzed {self.analyzed_packets} flows!')
         label_index = np.argmax(result)
         result_label = self.labels[label_index]
         if result_label != 'BENIGN':
@@ -266,7 +282,9 @@ class Inference_Model:
                 try:
                     data = feature_queue.get(timeout=1)
                 # skip if no data
-                except queue.Empty: continue
+                except queue.Empty: 
+                    sleep(3)
+                    continue
 
                 # Slice the first 19 numeric features; the last 3 keys are
                 # metadata (src, sport, dst) and must be excluded from inference
@@ -307,6 +325,7 @@ class PacketCapture:
         # Bounded queue prevents unbounded memory growth under high traffic
         self.packet_queue = queue.Queue(maxsize=2000)
         self.stop_capture = threading.Event()
+        self.capture_thread = None
 
     def packet_callback(self, packet):
         """Scapy callback invoked for every captured packet.
@@ -389,6 +408,8 @@ class TrafficAnalyzer:
         })
         # Bounded queue prevents memory growth if inference falls behind capture
         self.feature_queue = queue.Queue(maxsize=2000)
+        self.timer = datetime.now()
+        self.tracked_flows = 0
 
     def analyze_packet(self, packet):
         """Updates flow statistics for a single packet and, when a flow is
@@ -425,6 +446,9 @@ class TrafficAnalyzer:
 
             # Update flow statistics
             stats = self.flow_stats[flow_key]
+            if len(self.flow_stats) != self.tracked_flows:
+                self.tracked_flows = len(self.flow_stats)
+                print(f'flows tracking: {self.tracked_flows}')
 
             # SYN without ACK => initial connection request; record originator metadata
             if 'S' in packet[TCP].flags and 'A' not in packet[TCP].flags:
@@ -439,9 +463,11 @@ class TrafficAnalyzer:
                 stats['sport'] = dport
                 stats['dst'] = src
             elif not stats['Destination Port']:
-                # Flow seen mid-stream without a captured handshake; discard it
-                del self.flow_stats[flow_key]
-                return None
+                # Flow seen mid-stream; assign as-is so it still reaches inference
+                stats['Destination Port'] = dport
+                stats['src'] = src
+                stats['sport'] = sport
+                stats['dst'] = dst
 
             # Determine packet direction relative to the original connection initiator
             if stats['Destination Port'] == sport:
@@ -470,12 +496,26 @@ class TrafficAnalyzer:
                     self.feature_queue.put_nowait(self.extract_attributes(stats))
                     del self.flow_stats[flow_key]
                 except queue.Full: pass
-            elif stats['FIN Flag Count'] >= 1:
+            elif stats['FIN Flag Count'] > 1:
                 # FIN observed - flow is closing; extract features now
                 try:
                     self.feature_queue.put_nowait(self.extract_attributes(stats))
                     del self.flow_stats[flow_key]
                 except queue.Full: pass
+            elif self.timer + timedelta(hours=1) < datetime.now():
+                old_flows = list()
+                self.timer = datetime.now()
+                for k, s in self.flow_stats.items():
+                    last_packet = s['last_bwd_time']
+                    if last_packet and packet.time - last_packet > 3600:
+                        self.feature_queue.put_nowait(self.extract_attributes(s))
+                        old_flows.append(k)
+                    elif packet.time - s['last_fwd_time'] > 3600:
+                        self.feature_queue.put_nowait(self.extract_attributes(s))
+                        old_flows.append(k)
+
+                for key in old_flows:
+                    del self.flow_stats[key]
 
 
 
@@ -588,6 +628,7 @@ class NetworkMonitorModel:
         self.interface = interface
         # Event used to signal the monitor thread to stop its processing loop
         self.monitoring_event = threading.Event()
+        self.request_wait = threading.Event()
 
     def start(self, machine):
         """Starts all subsystems and launches the main packet-processing loop.
@@ -605,12 +646,18 @@ class NetworkMonitorModel:
         print(f"Now Monitoring the network on interface: {self.interface}")
         self.monitoring_event.clear()
         def monitor_thread():
-            self.packet_capture.start_capture(self.interface)
-            self.inference_engine.start_inference(self.traffic_analyzer.feature_queue)
-            self.alert_system.send_alerts(self.inference_engine.alert_queue)
+            if self.packet_capture.capture_thread is None or not self.packet_capture.capture_thread.is_alive():
+                print('starting packet capture')
+                self.packet_capture.start_capture(self.interface)
+            if self.inference_engine.inference_thread is None or not self.inference_engine.inference_thread.is_alive():
+                print('starting inference engine')
+                self.inference_engine.start_inference(self.traffic_analyzer.feature_queue)
+            if self.alert_system.alert_thread is None or not self.alert_system.alert_thread.is_alive():
+                print('starting alert system')
+                self.alert_system.send_alerts(self.inference_engine.alert_queue)
+
 
             # count tracks consecutive empty-queue cycles to detect traffic lulls
-            count = 0
             while not self.monitoring_event.is_set():
                 try:
                     packet = self.packet_capture.packet_queue.get(timeout=1)
@@ -618,11 +665,13 @@ class NetworkMonitorModel:
                     self.traffic_analyzer.analyze_packet(packet)
                 except queue.Empty:
                     count += 1
-                    # After two consecutive idle seconds, yield back to idle state
-                    if count > 1: machine.send("wait")
-                    continue
-
-            self.packet_capture.stop()
+                    # After two consecutive idle seconds, yield back to idle state.
+                    # The send may race with a transition already in progress from a
+                    # prior cycle; swallow the exception and exit this stale thread so
+                    # the next on_enter_monitor spawns the sole active monitor_thread.
+                    if count > 10:
+                        self.request_wait.set()
+                        return
 
         self.monitor_thread = threading.Thread(target=monitor_thread)
         self.monitor_thread.start()
@@ -649,6 +698,8 @@ class NetworkMonitorModel:
         if self.packet_capture.capture_thread.is_alive(): self.packet_capture.stop()
         if self.inference_engine.inference_thread.is_alive(): self.inference_engine.stop()
         if self.alert_system.alert_thread.is_alive(): self.alert_system.stop()
+        if hasattr(self, 'monitor_thread') and self.monitor_thread.is_alive():
+            self.monitor_thread.join()
 # End Section
 
 
@@ -662,7 +713,7 @@ class NetworkMonitorModel:
 #  lockdown
 #
 #
-class NetworkMonitorMachine(StateMachine["NetworkMonitorModel"]):
+class NetworkMonitorMachine(StateMachine):
     """A state machine designed to manage our the network monitor"""
 
     # Define the three states for our machine.
@@ -689,7 +740,8 @@ class NetworkMonitorMachine(StateMachine["NetworkMonitorModel"]):
         it is seeded into the model's packet queue and the ``start`` event
         is sent immediately to transition back to ``monitor``.
         """
-        sniffer = AsyncSniffer(iface = self.model.interface, count = 1)
+        print('entering idle')
+        sniffer = AsyncSniffer(iface = self.model.interface, count = 1, filter="ip and tcp")
         sniffer.start()
         sniffer.join()
         for result in sniffer.results:
@@ -713,6 +765,17 @@ class NetworkMonitorMachine(StateMachine["NetworkMonitorModel"]):
         :meth:`NetworkMonitorModel.stop`.
         """
         self.model.stop()
+
+    def run(self):
+        try:
+            while self.configuration != self.hibernate:
+                self.model.request_wait.wait()
+                self.model.request_wait.clear()
+                self.send("wait")
+                    
+        except KeyboardInterrupt:
+            print("Cleaning up and Exiting. . .")
+            self.send("stop")
 # End Section
 
 
@@ -724,17 +787,6 @@ if __name__ == "__main__":
     # Set up our State Machine
     #
     network_model = NetworkMonitorModel(interface, model_file)
-
-
-    try:
-        nmm = NetworkMonitorMachine(network_model)
-        # Spin until the machine reaches the terminal hibernate state
-        while nmm.current_state != nmm.hibernate:
-            sleep(1)
-    except KeyboardInterrupt:
-        # Catch the keyboard interrupt (CTRL-C) and exit cleanly
-        print("Cleaning up. Exiting...")
-        nmm.send('stop')
-        ## close all threads and delete all queues
-        sleep(2)
+    nmm = NetworkMonitorMachine(network_model)
+    nmm.run()
 # End Section

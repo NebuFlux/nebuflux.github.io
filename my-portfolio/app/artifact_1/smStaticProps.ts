@@ -14,13 +14,23 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
     const stateMachineCode: ArtifactData = {
         'State Machine': {
             'Definition': {
-                "content": "class NetworkMonitorMachine(StateMachine['NetworkMonitorModel']):\n" +
+                "content": "class NetworkMonitorMachine(StateMachine):\n" +
                     "\tidle = State(initial=True)\n" +
                     "\tmonitor = State()\n" +
                     "\thibernate = State(final=True)\n\n" +
                     "\tstart = idle.to(monitor)\n" +
                     "\twait = monitor.to(idle)\n" +
                     "\tstop = idle.to(hibernate) | monitor.to(hibernate)"
+            },
+            'Run': {
+                "content": "def run(self):\n" +
+                    "\ttry:\n" +
+                    "\t\twhile self.configuration != self.hibernate:\n" +
+                    "\t\t\tself.model.request_wait.wait()\n" +
+                    "\t\t\tself.model.request_wait.clear()\n" +
+                    "\t\t\tself.send('wait')\n" +
+                    "\texcept KeyboardInterrupt:\n" +
+                    "\t\tself.send('stop')"
             },
             'Enter Idle': {
                 "content": "def on_enter_idle(self):\n" +
@@ -41,7 +51,8 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                     "\tself.inference_engine = Inference_Model(self.model_file)\n" +
                     "\tself.alert_system = Alert_System()\n" +
                     "\tself.interface = interface\n" +
-                    "\tself.monitoring_event = threading.Event()"
+                    "\tself.monitoring_event = threading.Event()\n" +
+                    "\tself.request_wait = threading.Event()"
             },
             'Monitor Loop': {
                 "content": "def monitor_thread():\n" +
@@ -56,7 +67,9 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                     "\t\t\tself.traffic_analyzer.analyze_packet(packet)\n" +
                     "\t\texcept queue.Empty:\n" +
                     "\t\t\tcount += 1\n" +
-                    "\t\t\tif count > 1: machine.send('wait')\n" +
+                    "\t\t\tif count > 1:\n" +
+                    "\t\t\t\tself.request_wait.set()\n" +
+                    "\t\t\t\treturn\n" +
                     "\t\t\tcontinue\n\n" +
                     "\tself.packet_capture.stop()"
             }
@@ -92,6 +105,40 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                     "# so the tensor fed to the interpreter is always fully numeric\n" +
                     "for k, v in attributes.items():\n" +
                     "\tif v != v: attributes[k] = 0.0  # NaN is the only value not equal to itself"
+            },
+            'Mid-stream Assignment': {
+                "content":
+                    "elif not stats['Destination Port']:\n" +
+                    "\t# Flow seen mid-stream; assign as-is so it still reaches inference\n" +
+                    "\tstats['Destination Port'] = dport\n" +
+                    "\tstats['src'] = src\n" +
+                    "\tstats['sport'] = sport\n" +
+                    "\tstats['dst'] = dst"
+            },
+            'FIN Threshold': {
+                "content":
+                    "elif stats['FIN Flag Count'] > 1:\n" +
+                    "\t# FIN observed - flow is closing; extract features now\n" +
+                    "\ttry:\n" +
+                    "\t\tself.feature_queue.put_nowait(self.extract_attributes(stats))\n" +
+                    "\t\tdel self.flow_stats[flow_key]\n" +
+                    "\texcept queue.Full: pass"
+            },
+            'Stale Flow Sweep': {
+                "content":
+                    "elif self.timer + timedelta(hours=1) < datetime.now():\n" +
+                    "\told_flows = list()\n" +
+                    "\tself.timer = datetime.now()\n" +
+                    "\tfor k, s in self.flow_stats.items():\n" +
+                    "\t\tlast_packet = s['last_bwd_time']\n" +
+                    "\t\tif last_packet and packet.time - last_packet > 3600:\n" +
+                    "\t\t\tself.feature_queue.put_nowait(self.extract_attributes(s))\n" +
+                    "\t\t\told_flows.append(k)\n" +
+                    "\t\telif packet.time - s['last_fwd_time'] > 3600:\n" +
+                    "\t\t\tself.feature_queue.put_nowait(self.extract_attributes(s))\n" +
+                    "\t\t\told_flows.append(k)\n\n" +
+                    "\tfor key in old_flows:\n" +
+                    "\t\tdel self.flow_stats[key]"
             }
         },
         'Inference Model': {
@@ -116,8 +163,7 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                 "content": "def __init__(self):\n" +
                     "\tself.key = os.environ['API_KEY']\n" +
                     "\tself.api_url = os.environ['SERVER_URL']\n" +
-                    "\tself.alert_event = threading.Event()\n" +
-                    "\tself.time_out = threading.Event()"
+                    "\tself.alert_event = threading.Event()"
             },
             'Heartbeat': {
                 "content": "# Heartbeat GET confirms the server is reachable before posting\n" +
@@ -127,7 +173,6 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                     "\t\theaders={'Authorization': f'Bearer {self.key}'},\n" +
                     "\t\ttimeout=5)\n" +
                     "except requests.exceptions.Timeout:\n" +
-                    "\tself.time_out.set()\n" +
                     "\tself.log_errors(activities=[], occasion={'heartbeat': 'Timeout'}, time=datetime.now())\n" +
                     "\tcontinue"
             },
@@ -151,14 +196,8 @@ export const getStateMachineCode = async(): Promise<ArtifactData> => {
                     "\tinterface = sys.argv[1] if len(sys.argv) > 1 else 'eth0'\n" +
                     "\tmodel_file = sys.argv[2] if len(sys.argv) > 2 else 'Inspector_Gadget_quant.tflite'\n" +
                     "\tnetwork_model = NetworkMonitorModel(interface, model_file)\n\n" +
-                    "\ttry:\n" +
-                    "\t\tnmm = NetworkMonitorMachine(network_model)\n" +
-                    "\t\twhile nmm.current_state != nmm.hibernate:\n" +
-                    "\t\t\tsleep(1)\n" +
-                    "\texcept KeyboardInterrupt:\n" +
-                    "\t\tprint('Cleaning up. Exiting...')\n" +
-                    "\t\tnmm.send('stop')\n" +
-                    "\t\tsleep(2)"
+                    "\tnmm = NetworkMonitorMachine(network_model)\n" +
+                    "\tnmm.run()"
             }
         }
     }
