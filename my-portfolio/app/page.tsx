@@ -1,12 +1,20 @@
 import { YouTubeEmbed } from '@next/third-parties/google'
+import Image from 'next/image'
 
 export default function Home() {
   return (
     <main className="flex flex-col p-5 lg:p-10 w-full mx-auto lg:max-w-[1100px]">
 
       <h1 className="text-center">Welcome</h1>
-
-      <p className="indent-10">
+      <div className="flex flex-col lg:block my-2 mx-0.5 lg:my-4 w-full">
+        <Image
+          src='/editedHeadshot.png'
+          width={350}
+          height={350}
+          alt='Headshot of Joshua Shoemaker'
+          className='rounded-full self-center lg:float-right lg:ml-4 lg:mb-2 [shape-outside:circle(50%)]'
+        />
+        <p className="indent-10">
         My name is Joshua Shoemaker and thank you for visiting my electronic
         Portfolio. I am currently an aviation electronics instructor for the
         United States Navy as an active-duty sailor. My work gives me a firsthand
@@ -30,7 +38,8 @@ export default function Home() {
         was hooked. A few months after returning home from deployment and
         becoming an instructor, I enrolled at Southern New Hampshire University.
       </p>
-
+      </div>
+      
       <p className="indent-10">
         This Portfolio is a reflection and summation of the skills I&rsquo;ve
         gained. To demonstrate those skills and my improvements, I&rsquo;ve
